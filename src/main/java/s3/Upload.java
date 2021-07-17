@@ -16,8 +16,8 @@ public class Upload {
     public static void main(String[] args) throws IOException {
         Regions region = Regions.DEFAULT_REGION;
         String BucketName = "4145";
-        String ObjectKey = "test1.txt";
-        String Path = "src/main/Data/test1.txt";
+        String ObjectKey = "test.mp3";
+        String Path = "src/main/Data/test.mp3";
 
         try {
             AmazonS3 s3 = AmazonS3ClientBuilder.standard()

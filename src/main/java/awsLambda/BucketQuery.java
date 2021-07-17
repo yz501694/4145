@@ -1,51 +1,43 @@
 package awsLambda;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.LambdaLogger;
-import java.util.Map;
-
-
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class BucketQuery {
-    public void Query(String name,File file) throws IOException{
-        File[] list = file.listFiles();
-        if(list != null){
-            for(File f : list){
-                if(f.isDirectory()){
-                    Query(name, f);
-                }else {
-                    if (name.equals(f.getName())){
-                        File source = new File(f.getPath());
-                        File des = new File("src/main/Output/output.txt"); //destination of output
-                        try(FileInputStream fIn = new FileInputStream(source);
-                            FileOutputStream fot = new FileOutputStream(des)){
-                            byte[] buffer = new byte[1024];
-                            int length;
+    public static void main(String[] args) {
+        String BucketName = "4145";
+        String key = "test.mp3";
 
-                            while ((length = fIn.read(buffer)) > 0) {
-
-                                fot.write(buffer, 0, length);
-                            }
-                        }
-                        System.out.println("Successfully processed");
-                        break;
-                    }else {
-                        System.out.println("No such file");
-                        System.out.println("Please upload a new file");
-                        break;
-                    }
-                }
+        System.out.format("Downloading %s from S3 bucket %s...\n", key, BucketName);
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).build();
+        try {
+            S3Object o = s3.getObject(BucketName, key);
+            S3ObjectInputStream s3is = o.getObjectContent();
+            FileOutputStream fos = new FileOutputStream("src/main/Output/testsuite.mp3");
+            byte[] read_buf = new byte[1024];
+            int read_len = 0;
+            while ((read_len = s3is.read(read_buf)) > 0) {
+                fos.write(read_buf, 0, read_len);
             }
+            s3is.close();
+            fos.close();
+        } catch (AmazonServiceException e) {
+            System.err.println(e.getErrorMessage());
+            System.exit(1);
+        } catch (FileNotFoundException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
         }
-    }
-    public static void main(String[] args) throws IOException {
-        BucketQuery query = new BucketQuery();
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter the name of file");
-        String name = scanner.next();
-        query.Query(name, new File("src/main/Data"));
     }
 }
